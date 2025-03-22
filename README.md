@@ -33,11 +33,14 @@ Webline WooCommerce SMS is a WordPress plugin that sends SMS notifications for W
    - `{customer_name}`: The customer's full name.
    - `{order_currency}`: The WooCommerce order currency.
 4. Save your settings.
-<img width="1545" alt="image" src="https://github.com/user-attachments/assets/46efa95a-4b8e-4334-b25c-dc11ae70d233" />
+
 
 ## Usage
 
 Once configured, the plugin will automatically send SMS notifications to customers when their order status changes. The SMS content will be based on the template you set in the plugin settings.
+
+<img width="1545" alt="image" src="https://github.com/user-attachments/assets/46efa95a-4b8e-4334-b25c-dc11ae70d233" />
+
 
 ## Example SMS Template
 
