@@ -43,7 +43,7 @@ Your order #{order_id} status has changed from {old_status} to {new_status}.
 
 ## Support
 
-For support, please visit [Webline Africa](https://webline.africa) or contact us at support@webline.africa.
+For support, please visit [Webline Africa](https://webline.africa) or contact us at help@webline.africa.
 
 ## License
 
