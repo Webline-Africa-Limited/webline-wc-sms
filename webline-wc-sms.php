@@ -22,12 +22,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @param string $phone The recipient's phone number.
  * @param string $message The message to send.
+ * @param int $order_id The order ID.
  *
  * @return string|WP_Error The API response or a WP_Error object on failure.
  */
-function webline_wc_send_sms( $phone, $message ) {
+function webline_wc_send_sms( $phone, $message, $order_id = 0 ) {
 	$options = get_option( 'webline_wc_sms_settings' );
-    $senderid = isset( $options['sender_id'] ) ? $options['sender_id'] : 'Webline'; // Use setting, default to 'Webline'
+    $senderid = isset( $options['sender_id'] ) ? $options['sender_id'] : 'TAARIFA'; // Use setting, default to 'TAARIFA'
     $api_username = isset( $options['api_key'] ) ? $options['api_key'] : ''; // Use setting
 
 	// Sanitize phone number (remove non-numeric characters)
@@ -54,15 +55,25 @@ function webline_wc_send_sms( $phone, $message ) {
         ),
     ) );
 
-    $response = curl_exec( $curl );
+    $response = curl_exec($curl);
+    $error = curl_error($curl);
+    $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    curl_close($curl);
 
-    if ( curl_errno( $curl ) ) {
-        $error_message = curl_error( $curl );
-        curl_close( $curl );
-        return new WP_Error( 'curl_error', $error_message, $error_message );
+    if (false === $response) {
+        return new WP_Error('curl_error', $error);
     }
 
-    curl_close( $curl );
+    // Decode JSON response
+    $response_data = json_decode($response, true);
+
+    // Check if the API request was successful
+    $status = ($http_code === 200 && isset($response_data['success']) && $response_data['success'] === true);
+    
+    if (!$status) {
+        return new WP_Error('api_error', isset($response_data['message']) ? $response_data['message'] : 'Unknown error');
+    }
+
     return $response;
 }
 
@@ -99,7 +110,7 @@ function webline_wc_order_status_changed( $order_id, $old_status, $new_status ) 
     );
 
     // Send the SMS.
-    $result = webline_wc_send_sms( $phone, $message );
+    $result = webline_wc_send_sms( $phone, $message, $order_id );
 
     if ( is_wp_error( $result ) ) {
         error_log( 'SMS Sending Failed: ' . $result->get_error_message() );
