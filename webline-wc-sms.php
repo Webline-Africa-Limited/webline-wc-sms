@@ -100,12 +100,12 @@ function webline_wc_order_status_changed( $order_id, $old_status, $new_status ) 
 
     // Get the SMS template from settings.
     $options = get_option( 'webline_wc_sms_settings' );
-    $template = isset( $options['sms_template'] ) ? $options['sms_template'] : __( 'Your order #{order_id} status has changed from {old_status} to {new_status}.', 'webline-wc-sms' );
+    $template = isset( $options['sms_template'] ) ? $options['sms_template'] : __( 'Dear {customer_name}, your order #{order_id} total {order_total} {order_currency} status has changed from {old_status} to {new_status}. Thank you!', 'webline-wc-sms' );
 
     // Replace tags in the template.
     $message = str_replace(
-        array( '{order_id}', '{old_status}', '{new_status}' ),
-        array( $order_id, $old_status, $new_status ),
+        array( '{order_id}', '{old_status}', '{new_status}', '{order_total}', '{customer_name}', '{order_currency}' ),
+        array( $order_id, $old_status, $new_status, $order->get_total(), $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(), $order->get_currency() ),
         $template
     );
 
@@ -257,15 +257,18 @@ function webline_wc_sms_sender_id_field_callback( $args ) {
  */
 function webline_wc_sms_template_field_callback( $args ) {
     $options = get_option( 'webline_wc_sms_settings' );
-    $template = isset( $options['sms_template'] ) ? $options['sms_template'] : __( 'Your order #{order_id} status has changed from {old_status} to {new_status}.', 'webline-wc-sms' );
+    $template = isset( $options['sms_template'] ) ? $options['sms_template'] : __( 'Dear {customer_name}, your order #{order_id} total {order_total} {order_currency} status has changed from {old_status} to {new_status}. Thank you!', 'webline-wc-sms' );
     ?>
     <textarea id="webline_wc_sms_template" name="webline_wc_sms_settings[sms_template]" rows="5" class="large-text"><?php echo esc_textarea( $template ); ?></textarea>
     <p class="description">
-        <?php _e( 'Use the following tags in your SMS template:', 'webline-wc-sms' ); ?>
+        <?php _e( 'Available tags:', 'webline-wc-sms' ); ?>
         <ul style="list-style-type: disc; margin-left: 20px;">
             <li><code>{order_id}</code> - <?php _e( 'Order ID', 'webline-wc-sms' ); ?></li>
             <li><code>{old_status}</code> - <?php _e( 'Old Order Status', 'webline-wc-sms' ); ?></li>
             <li><code>{new_status}</code> - <?php _e( 'New Order Status', 'webline-wc-sms' ); ?></li>
+            <li><code>{order_total}</code> - <?php _e( 'Order Total', 'webline-wc-sms' ); ?></li>
+            <li><code>{order_currency}</code> - <?php _e( 'Order Currency', 'webline-wc-sms' ); ?></li>
+            <li><code>{customer_name}</code> - <?php _e( 'Customer Name', 'webline-wc-sms' ); ?></li>
         </ul>
     </p>
     <?php
