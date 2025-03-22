@@ -87,8 +87,16 @@ function webline_wc_order_status_changed( $order_id, $old_status, $new_status ) 
         return;
     }
 
-    // Create the message.
-    $message = sprintf( __( 'Your order #%d status has changed from %s to %s.', 'webline-wc-sms' ), $order_id, $old_status, $new_status );
+    // Get the SMS template from settings.
+    $options = get_option( 'webline_wc_sms_settings' );
+    $template = isset( $options['sms_template'] ) ? $options['sms_template'] : __( 'Your order #{order_id} status has changed from {old_status} to {new_status}.', 'webline-wc-sms' );
+
+    // Replace tags in the template.
+    $message = str_replace(
+        array( '{order_id}', '{old_status}', '{new_status}' ),
+        array( $order_id, $old_status, $new_status ),
+        $template
+    );
 
     // Send the SMS.
     $result = webline_wc_send_sms( $phone, $message );
@@ -188,6 +196,21 @@ function webline_wc_sms_register_settings() {
 add_action( 'admin_init', 'webline_wc_sms_register_settings' );
 
 /**
+ * Register SMS Template field in settings.
+ */
+function webline_wc_sms_register_template_field() {
+    // Add SMS Template field.
+    add_settings_field(
+        'webline_wc_sms_template',
+        __( 'SMS Template', 'webline-wc-sms' ),
+        'webline_wc_sms_template_field_callback',
+        'webline-wc-sms-settings',
+        'webline_wc_sms_general_section'
+    );
+}
+add_action( 'admin_init', 'webline_wc_sms_register_template_field' );
+
+/**
  * Render the API Key field.
  *
  * @param array $args Arguments passed from add_settings_field().
@@ -217,6 +240,27 @@ function webline_wc_sms_sender_id_field_callback( $args ) {
 }
 
 /**
+ * Render the SMS Template field.
+ *
+ * @param array $args Arguments passed from add_settings_field().
+ */
+function webline_wc_sms_template_field_callback( $args ) {
+    $options = get_option( 'webline_wc_sms_settings' );
+    $template = isset( $options['sms_template'] ) ? $options['sms_template'] : __( 'Your order #{order_id} status has changed from {old_status} to {new_status}.', 'webline-wc-sms' );
+    ?>
+    <textarea id="webline_wc_sms_template" name="webline_wc_sms_settings[sms_template]" rows="5" class="large-text"><?php echo esc_textarea( $template ); ?></textarea>
+    <p class="description">
+        <?php _e( 'Use the following tags in your SMS template:', 'webline-wc-sms' ); ?>
+        <ul style="list-style-type: disc; margin-left: 20px;">
+            <li><code>{order_id}</code> - <?php _e( 'Order ID', 'webline-wc-sms' ); ?></li>
+            <li><code>{old_status}</code> - <?php _e( 'Old Order Status', 'webline-wc-sms' ); ?></li>
+            <li><code>{new_status}</code> - <?php _e( 'New Order Status', 'webline-wc-sms' ); ?></li>
+        </ul>
+    </p>
+    <?php
+}
+
+/**
  * Sanitize settings before saving.
  *
  * @param array $input The unsanitized settings values.
@@ -232,6 +276,10 @@ function webline_wc_sms_sanitize_settings( $input ) {
 
     if ( isset( $input['sender_id'] ) ) {
         $sanitized_input['sender_id'] = sanitize_text_field( $input['sender_id'] );
+    }
+
+    if ( isset( $input['sms_template'] ) ) {
+        $sanitized_input['sms_template'] = wp_kses_post( $input['sms_template'] );
     }
 
     return $sanitized_input;
