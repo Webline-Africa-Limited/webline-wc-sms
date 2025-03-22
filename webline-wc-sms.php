@@ -1,10 +1,10 @@
 <?php
 /**
- * Plugin Name: Webline WC SMS
+ * Plugin Name: Webline WooCommerce SMS
  * Plugin URI: https://webline.africa
  * Description: Sends SMS notifications for WooCommerce order status changes.
  * Version: 1.0.0
- * Author: Webline Africa
+ * Author: Webline Africa Limited
  * Author URI: https://webline.africa
  * License: GPL-2.0+
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
