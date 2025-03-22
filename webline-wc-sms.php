@@ -81,11 +81,11 @@ function webline_wc_order_status_changed( $order_id, $old_status, $new_status ) 
     // Get the billing phone number.
     $phone = $order->get_billing_phone();
 
-	//check if phone is available
-	if(empty($phone)){
-		error_log('No phone number for order ID: ' . $order_id);
-		return;
-	}
+    //check if phone is available
+    if(empty($phone)){
+        error_log('No phone number for order ID: ' . $order_id);
+        return;
+    }
 
     // Create the message.
     $message = sprintf( __( 'Your order #%d status has changed from %s to %s.', 'webline-wc-sms' ), $order_id, $old_status, $new_status );
@@ -97,22 +97,6 @@ function webline_wc_order_status_changed( $order_id, $old_status, $new_status ) 
         error_log( 'SMS Sending Failed: ' . $result->get_error_message() );
     } else {
         error_log( 'SMS Sent Successfully: ' . $result );
-    }
-
-	// Send SMS to admin if enabled and phone number is set
-    $options = get_option( 'webline_wc_sms_settings' );
-    $admin_phone = isset( $options['admin_phone'] ) ? $options['admin_phone'] : '';
-	$admin_notifications_enabled = isset($options['enable_admin_notifications']) ? $options['enable_admin_notifications'] : false;
-
-    if ( $admin_notifications_enabled && ! empty( $admin_phone ) ) {
-        $admin_message = sprintf( __( 'Order #%d status changed from %s to %s.', 'webline-wc-sms' ), $order_id, $old_status, $new_status );
-        $admin_result = webline_wc_send_sms( $admin_phone, $admin_message );
-
-        if ( is_wp_error( $admin_result ) ) {
-            error_log( 'Admin SMS Sending Failed: ' . $admin_result->get_error_message() );
-        } else {
-            error_log( 'Admin SMS Sent Successfully: ' . $admin_result );
-        }
     }
 }
 
@@ -140,11 +124,24 @@ function webline_wc_sms_settings_page_content() {
     ?>
     <div class="wrap">
         <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+        
+        <div class="notice notice-info">
+            <p>
+                <?php 
+                _e('To use this plugin, you need:', 'webline-wc-sms');
+                echo '<ul style="list-style-type: disc; margin-left: 20px;">';
+                echo '<li>' . __('An account on <a href="https://webline.africa" target="_blank">webline.africa</a>', 'webline-wc-sms') . '</li>';
+                echo '<li>' . __('An API key from your Webline Africa dashboard', 'webline-wc-sms') . '</li>';
+                echo '</ul>';
+                ?>
+            </p>
+        </div>
+
         <form action="options.php" method="post">
             <?php
-            settings_fields( 'webline_wc_sms_settings' ); // Output settings fields.
-            do_settings_sections( 'webline-wc-sms-settings' ); // Output settings sections.
-            submit_button(); // Output submit button.
+            settings_fields( 'webline_wc_sms_settings' );
+            do_settings_sections( 'webline-wc-sms-settings' );
+            submit_button();
             ?>
         </form>
     </div>
@@ -157,53 +154,35 @@ function webline_wc_sms_settings_page_content() {
 function webline_wc_sms_register_settings() {
     // Register the settings.
     register_setting(
-        'webline_wc_sms_settings', // Option group.
-        'webline_wc_sms_settings', // Option name.
-        'webline_wc_sms_sanitize_settings' // Sanitize callback.
+        'webline_wc_sms_settings',
+        'webline_wc_sms_settings',
+        'webline_wc_sms_sanitize_settings'
     );
 
     // Add settings section.
     add_settings_section(
-        'webline_wc_sms_general_section', // Section ID.
-        __( 'General Settings', 'webline-wc-sms' ), // Section title.
-        null, // Callback function (not needed for this section).
-        'webline-wc-sms-settings' // Page slug.
+        'webline_wc_sms_general_section',
+        __( 'General Settings', 'webline-wc-sms' ),
+        null,
+        'webline-wc-sms-settings'
     );
 
     // Add API Key field.
     add_settings_field(
-        'webline_wc_sms_api_key', // Field ID.
-        __( 'API Key', 'webline-wc-sms' ), // Field title.
-        'webline_wc_sms_api_key_field_callback', // Callback function to render the field.
-        'webline-wc-sms-settings', // Page slug.
-        'webline_wc_sms_general_section' // Section ID.
+        'webline_wc_sms_api_key',
+        __( 'API Key', 'webline-wc-sms' ),
+        'webline_wc_sms_api_key_field_callback',
+        'webline-wc-sms-settings',
+        'webline_wc_sms_general_section'
     );
 
     // Add Sender ID field.
     add_settings_field(
-        'webline_wc_sms_sender_id', // Field ID.
-        __( 'Sender ID', 'webline-wc-sms' ), // Field title.
-        'webline_wc_sms_sender_id_field_callback', // Callback function to render the field.
-        'webline-wc-sms-settings', // Page slug.
-        'webline_wc_sms_general_section' // Section ID.
-    );
-
-    // Add Admin Phone Number field.
-    add_settings_field(
-        'webline_wc_sms_admin_phone', // Field ID.
-        __( 'Admin Phone Number', 'webline-wc-sms' ), // Field title.
-        'webline_wc_sms_admin_phone_field_callback', // Callback function to render the field.
-        'webline-wc-sms-settings', // Page slug.
-        'webline_wc_sms_general_section' // Section ID.
-    );
-
-	// Add Enable Admin Notifications field.
-    add_settings_field(
-        'webline_wc_sms_enable_admin_notifications', // Field ID.
-        __( 'Enable Admin Notifications', 'webline-wc-sms' ), // Field title.
-        'webline_wc_sms_enable_admin_notifications_field_callback', // Callback function
-        'webline-wc-sms-settings', // Page slug.
-        'webline_wc_sms_general_section' // Section ID.
+        'webline_wc_sms_sender_id',
+        __( 'Sender ID', 'webline-wc-sms' ),
+        'webline_wc_sms_sender_id_field_callback',
+        'webline-wc-sms-settings',
+        'webline_wc_sms_general_section'
     );
 }
 add_action( 'admin_init', 'webline_wc_sms_register_settings' );
@@ -218,34 +197,9 @@ function webline_wc_sms_api_key_field_callback( $args ) {
     $api_key = isset( $options['api_key'] ) ? $options['api_key'] : '';
     ?>
     <input type="text" id="webline_wc_sms_api_key" name="webline_wc_sms_settings[api_key]" value="<?php echo esc_attr( $api_key ); ?>" class="regular-text">
-    <?php
-}
-
-/**
- * Render the Admin Phone Number field.
- *
- * @param array $args Arguments passed from add_settings_field().
- */
-function webline_wc_sms_admin_phone_field_callback( $args ) {
-    $options = get_option( 'webline_wc_sms_settings' );
-    $admin_phone = isset( $options['admin_phone'] ) ? $options['admin_phone'] : '';
-    ?>
-    <input type="text" id="webline_wc_sms_admin_phone" name="webline_wc_sms_settings[admin_phone]" value="<?php echo esc_attr( $admin_phone ); ?>" class="regular-text">
-	<p class="description"><?php _e( 'Enter the phone number to receive admin notifications (optional).', 'webline-wc-sms' ); ?></p>
-    <?php
-}
-
-/**
- * Render the Enable Admin Notifications field.
- *
- * @param array $args
- */
-function webline_wc_sms_enable_admin_notifications_field_callback($args){
-	$options = get_option( 'webline_wc_sms_settings' );
-    $enabled = isset( $options['enable_admin_notifications'] ) ? $options['enable_admin_notifications'] : '';
-    ?>
-    <input type="checkbox" id="webline_wc_sms_enable_admin_notifications" name="webline_wc_sms_settings[enable_admin_notifications]" value="1" <?php checked( 1, $enabled, true ); ?>>
-    <label for="webline_wc_sms_enable_admin_notifications"><?php _e( 'Send SMS notifications to the admin when the order status changes.', 'webline-wc-sms' ); ?></label>
+    <p class="description">
+        <?php _e('Enter your API key from your <a href="https://webline.africa" target="_blank">Webline Africa</a> dashboard. If you don\'t have an account, please sign up to get your API key.', 'webline-wc-sms'); ?>
+    </p>
     <?php
 }
 
@@ -279,16 +233,6 @@ function webline_wc_sms_sanitize_settings( $input ) {
     if ( isset( $input['sender_id'] ) ) {
         $sanitized_input['sender_id'] = sanitize_text_field( $input['sender_id'] );
     }
-
-    if ( isset( $input['admin_phone'] ) ) {
-        $sanitized_input['admin_phone'] = sanitize_text_field( $input['admin_phone'] );
-    }
-
-	if ( isset( $input['enable_admin_notifications'] ) ) {
-        $sanitized_input['enable_admin_notifications'] = 1;
-    } else {
-		$sanitized_input['enable_admin_notifications'] = 0;
-	}
 
     return $sanitized_input;
 }
